@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="L2J_Server" default="build" basedir=".">
+	<description>
+		This script will build the L2J Server.
+
+		This program is free software; you can redistribute it and/or modify
+		it under the terms of the GNU General Public License as published by
+		the Free Software Foundation; either version 3, or (at your option)
+		any later version.
+
+		This program is distributed in the hope that it will be useful,
+		but WITHOUT ANY WARRANTY; without even the implied warranty of
+		MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+		GNU General Public License for more details.
+
+		You should have received a copy of the GNU General Public License
+		along with this program; if not, write to the Free Software
+		Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+		02111-1307, USA.
+
+		http://www.gnu.org/copyleft/gpl.html
+	</description>
+	<property name="src" location="java" />
+	<property name="lib" location="lib" />
+	<property name="build" location="build" />
+	<property name="build.classes" location="${build}/classes" />
+	<property name="build.dist" location="${build}/dist" />
+	<property name="build.dist.login" location="${build.dist}/login" />
+	<property name="build.dist.game" location="${build.dist}/gameserver" />
+	<path id="classpath">
+		<fileset dir="${lib}">
+			<include name="c3p0-0.9.2-pre1.jar" />
+			<include name="bsf.jar" />
+			<include name="bsh-2.0b4.jar" />
+			<include name="commons-lang3-3.9.jar" />
+			<include name="commons-logging-1.1.jar" />
+			<include name="jython.jar" />
+			<include name="javolution-core-java-6.0.0.jar" />
+			<include name="mchange-commons-0.2.jar" />
+			<include name="mysql-connector-java-8.0.15.jar" />
+			<include name="L2J_GeoDriver.jar" />
+		</fileset>
+	</path>
+	<target name="init" depends="clean" description="Create the output directories.">
+		<mkdir dir="${build}" />
+		<mkdir dir="${build.classes}" />
+		<mkdir dir="${build.dist}" />
+		<mkdir dir="${build.dist.login}" />
+		<mkdir dir="${build.dist.game}" />
+	</target>
+	<target name="compile" depends="init" description="Compile the source.">
+		<javac destdir="${build.classes}" optimize="on" debug="on" source="11" target="11" nowarn="off" includeantruntime="false" deprecation="yes">
+			<src path="${src}" />
+			<classpath refid="classpath" />
+			<compilerarg value="-Xlint" />
+		</javac>
+	</target>
+	<target name="jar" depends="compile" description="Create the jar file">
+		<jar destfile="${build}/l2jserver.jar">
+			<fileset dir="${build.classes}" />
+			<manifest>
+				<attribute name="Main-Class" value="net.sf.l2j.Server" />
+				<attribute name="Class-Path" value=". bsf.jar bsh-2.0b4.jar commons-lang3-3.9.jar commons-logging-1.1.jar c3p0-0.9.2-pre1.jar jython.jar mysql-connector-java-8.0.15.jar javolution-core-java-6.0.0.jar mchange-commons-0.2.jar L2J_GeoDriver.jar" />
+			</manifest>
+		</jar>
+		<copy todir="${build.dist.login}">
+			<fileset dir="${build}">
+				<include name="l2jserver.jar" />
+			</fileset>
+		</copy>
+		<copy todir="${build.dist.game}">
+			<fileset dir="${build}">
+				<include name="l2jserver.jar" />
+			</fileset>
+		</copy>
+	</target>
+	<target name="build" depends="jar">
+		<copy todir="${build.dist.login}">
+			<fileset dir="${src}">
+				<include name="log.cfg" />
+				<include name="banned_ip.cfg" />
+				<include name="console.cfg" />
+			</fileset>
+		</copy>
+		<copy todir="${build.dist.game}">
+			<fileset dir="${src}">
+				<include name="log.cfg" />
+				<include name="console.cfg" />
+			</fileset>
+		</copy>
+		<copy todir="${build.dist.login}">
+			<fileset dir="${src}/../lib">
+				<include name="c3p0-0.9.2-pre1.jar" />
+				<include name="mysql-connector-java-8.0.15.jar" />
+				<include name="javolution-core-java-6.0.0.jar" />
+				<include name="mchange-commons-0.2.jar" />
+			</fileset>
+		</copy>
+		<copy todir="${build.dist.game}">
+			<fileset dir="${src}/../lib">
+				<include name="*.jar" />
+			</fileset>
+		</copy>
+		<copy todir="${build.dist}">
+			<fileset dir="${basedir}">
+				<include name="changes.txt" />
+				<include name="LICENSE.txt" />
+				<include name="README.txt" />
+			</fileset>
+		</copy>
+		<copy todir="${build.dist}">
+			<fileset dir="${src}/../lib">
+				<include name="*LICENSE*" />
+			</fileset>
+		</copy>
+		<copy todir="${build.dist.login}">
+			<fileset dir="dist">
+				<include name="startAccountManager.*" />
+				<include name="startSQLAccountManager.*" />
+				<include name="LoginServer_loop.sh" />
+				<include name="startLoginServer.*" />
+				<include name="RegisterGameServer.*" />
+			</fileset>
+		</copy>
+		<copy todir="${build.dist.game}">
+			<fileset dir="dist">
+				<include name="GameServer_loop.sh" />
+				<include name="startGameServer.*" />
+				<include name="hibernate.cfg.xml" />
+			</fileset>
+		</copy>
+		<fixcrlf srcdir="${build.dist.game}" eol="lf" eof="remove" includes="**/*.sh">
+		</fixcrlf>
+		<fixcrlf srcdir="${build.dist.login}" eol="lf" eof="remove" includes="**/*.sh">
+		</fixcrlf>
+		<fixcrlf srcdir="${build.dist.game}" eol="crlf" eof="remove" includes="**/*.bat">
+		</fixcrlf>
+		<fixcrlf srcdir="${build.dist.login}" eol="crlf" eof="remove" includes="**/*.bat">
+		</fixcrlf>
+		<mkdir dir="${build.dist.game}/log" />
+		<mkdir dir="${build.dist.login}/log" />
+		<mkdir dir="${build.dist.game}/hibernate-mapping" />
+		<mkdir dir="${build.dist.game}/config" />
+		<mkdir dir="${build.dist.login}/config" />
+		<copy todir="${build.dist.game}/config">
+			<fileset dir="java/config">
+				<include name="*.properties" />
+				<exclude name="loginserver.properties" />
+			</fileset>
+		</copy>
+		<copy todir="${build.dist.login}/config">
+			<fileset dir="java/config">
+				<include name="loginserver.properties" />
+				<include name="telnet.properties" />
+			</fileset>
+		</copy>
+		<mkdir dir="${build.dist.game}/data" />
+		<copy todir="${build.dist.game}/data">
+			<fileset dir="data">
+				<include name="*.csv" />
+				<include name="*.txt" />
+			</fileset>
+		</copy>
+		<mkdir dir="${build.dist.game}/data/geodata" />
+		<copy todir="${build.dist.game}/data/geodata">
+			<fileset dir="data/geodata">
+				<include name="*.txt" />
+				<include name="*.l2j" />
+			</fileset>
+		</copy>
+		<mkdir dir="${build.dist.game}/data/pathnode" />
+		<copy todir="${build.dist.game}/data/pathnode">
+			<fileset dir="data/pathnode">
+				<include name="*.txt" />
+				<include name="*.pn" />
+			</fileset>
+		</copy>
+	</target>
+	<target name="clean" description="Remove the output directories">
+		<delete dir="${build}" />
+	</target>
+</project>
